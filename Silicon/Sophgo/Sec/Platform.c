@@ -154,5 +154,10 @@ PlatformPeimInitialization (
   //
   PopulateIoResources (Base, "sophgo,spifmc");
 
+  //
+  // Add Ethernet resource
+  //
+  PopulateIoResources (Base, "sophgo,ethernet");
+
   return EFI_SUCCESS;
 }
