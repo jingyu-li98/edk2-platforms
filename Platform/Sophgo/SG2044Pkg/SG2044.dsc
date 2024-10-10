@@ -36,11 +36,16 @@
   #
   # Network definition
   #
-  DEFINE NETWORK_SNP_ENABLE       = FALSE
-  DEFINE NETWORK_IP6_ENABLE       = FALSE
-  DEFINE NETWORK_TLS_ENABLE       = FALSE
-  DEFINE NETWORK_HTTP_BOOT_ENABLE = FALSE
-  DEFINE NETWORK_ISCSI_ENABLE     = FALSE
+  DEFINE NETWORK_SNP_ENABLE             = FALSE
+  DEFINE NETWORK_IP6_ENABLE             = FALSE
+  DEFINE NETWORK_TLS_ENABLE             = FALSE
+  DEFINE NETWORK_HTTP_BOOT_ENABLE       = FALSE
+  DEFINE NETWORK_ALLOW_HTTP_CONNECTIONS = TRUE
+  DEFINE NETWORK_ISCSI_ENABLE           = FALSE
+
+!if $(NETWORK_SNP_ENABLE) == TRUE
+  !error "NETWORK_SNP_ENABLE is IA32/X64/EBC only"
+!endif
 
   #
   # x64 Emulator
@@ -256,6 +261,10 @@
   # Nor Flash Library
   NorFlashInfoLib|EmbeddedPkg/Library/NorFlashInfoLib/NorFlashInfoLib.inf
 
+  # DMA Library for non-coherent platform
+  DmaLib|EmbeddedPkg/Library/NonCoherentDmaLib/NonCoherentDmaLib.inf
+  #DmaLib|EmbeddedPkg/Library/CoherentDmaLib/CoherentDmaLib.inf
+
 [LibraryClasses.common.SEC]
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf
@@ -306,6 +315,7 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
+  NonDiscoverableDeviceRegistrationLib|MdeModulePkg/Library/NonDiscoverableDeviceRegistrationLib/NonDiscoverableDeviceRegistrationLib.inf
 !ifdef $(SOURCE_DEBUG_ENABLE)
   DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/DxeDebugAgentLib.inf
 !endif
@@ -334,7 +344,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
-  gEfiMdePkgTokenSpaceGuid.PcdRiscVFeatureOverride|0x04
+  gEfiMdePkgTokenSpaceGuid.PcdRiscVFeatureOverride|0xF
   gEfiMdePkgTokenSpaceGuid.PcdMaximumGuidedExtractHandler|0x10
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize|0x8000
@@ -437,9 +447,16 @@
 
   gUefiCpuPkgTokenSpaceGuid.PcdCpuCoreCrystalClockFrequency|50000000
 
+  #
+  # DW MAC4 default mac address
+  #
+  gSophgoTokenSpaceGuid.PcdDwMac4DefaultMacAddress|0x161822242628
+
 [PcdsFixedAtBuild.common]
   gSophgoTokenSpaceGuid.PcdSDIOBase|0x703000B000
   gSophgoTokenSpaceGuid.PcdSPIFMC1Base|0x7001000000
+  gSophgoTokenSpaceGuid.PcdPhyResetGpio|TRUE
+  gSophgoTokenSpaceGuid.PcdPhyResetGpioPin|28
 
 ################################################################################
 #
@@ -471,6 +488,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoVerticalResolution|480
   #gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|0
   #gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn|0
+
+  #
+  # IPv4 and IPv6 PXE Boot support.
+  #
+  gEfiNetworkPkgTokenSpaceGuid.PcdIPv4PXESupport|0x01
+  gEfiNetworkPkgTokenSpaceGuid.PcdIPv6PXESupport|0x01
 
 [PcdsDynamicHii]
   gUefiOvmfPkgTokenSpaceGuid.PcdForceNoAcpi|L"ForceNoAcpi"|gOvmfVariableGuid|0x0|TRUE|NV,BS
@@ -622,6 +645,13 @@
   # Network Support
   #
   !include NetworkPkg/Network.dsc.inc
+  Silicon/Sophgo/Drivers/Net/StmmacMdioDxe/StmmacMdioDxe.inf
+  Silicon/Sophgo/Drivers/Net/MotorcommPhyDxe/Motorcomm8531PhyDxe.inf
+  Silicon/Sophgo/Drivers/Net/DwMac4SnpDxe/DwMac4SnpDxe.inf
+  #NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf {
+  #  <LibraryClasses>
+  #    NULL|OvmfPkg/Library/PxeBcPcdProducerLib/PxeBcPcdProducerLib.inf
+  #}
 
   #
   # USB Support
